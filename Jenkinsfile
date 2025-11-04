@@ -1,13 +1,8 @@
 pipeline {
     agent any
 
-    environment {
-        DOCKERHUB_USER = "srilakshmikalaga"
-        IMAGE_NAME = "aceest-fitness-app"
-        IMAGE_TAG = "v${BUILD_NUMBER}"
-    }
-
     stages {
+
         stage('Checkout Code') {
             steps {
                 checkout([$class: 'GitSCM',
@@ -22,40 +17,34 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                sh 'pip3 install -r requirements.txt'
+                sh 'pip3 install --user -r requirements.txt'
             }
         }
 
         stage('Run Tests') {
             steps {
-                sh 'pytest -q || true'
+                sh '''
+                    export PATH=$PATH:$HOME/.local/bin
+                    python3 -m pytest -q
+                '''
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh "docker build -t ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG} ."
+                sh 'docker build -t aceest-fitness-app .'
             }
         }
 
-        stage('Push to Docker Hub') {
+        stage('Tag & Push to Docker Hub') {
             steps {
-                withCredentials([string(credentialsId: 'docker-hub-password', variable: 'DOCKER_PASS')]) {
-                    sh """
-                    echo "$DOCKER_PASS" | docker login -u $DOCKERHUB_USER --password-stdin
-                    docker push ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}
-                    """
+                withCredentials([string(credentialsId: 'docker-hub-password', variable: 'DOCKERHUB_TOKEN')]) {
+                    sh '''
+                        docker tag aceest-fitness-app srilakshmikalaga/aceest-fitness-app:v${BUILD_NUMBER}
+                        echo "$DOCKERHUB_TOKEN" | docker login -u "srilakshmikalaga" --password-stdin
+                        docker push srilakshmikalaga/aceest-fitness-app:v${BUILD_NUMBER}
+                    '''
                 }
-            }
-        }
-
-        stage('Deploy To Kubernetes') {
-            steps {
-                sh """
-                sed -i 's|image:.*|image: ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}|g' k8s/deployment.yaml
-                kubectl apply -f k8s/deployment.yaml
-                kubectl apply -f k8s/service.yaml
-                """
             }
         }
     }
