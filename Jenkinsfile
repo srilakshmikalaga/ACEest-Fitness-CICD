@@ -23,7 +23,11 @@ pipeline {
 
         stage('Run Tests') {
             steps {
-                sh 'export PYTHONPATH=$PYTHONPATH:$WORKSPACE && pytest -q'
+                sh '''
+                export PATH=$HOME/.local/bin:$PATH
+                export PYTHONPATH=$WORKSPACE
+                pytest -q
+                '''
             }
         }
 
