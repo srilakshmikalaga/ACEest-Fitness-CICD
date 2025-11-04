@@ -28,7 +28,7 @@ pipeline {
 
         stage('Run Tests') {
             steps {
-                sh 'python3 -m pytest -q || true'
+                sh 'pytest -q || true'
             }
         }
 
