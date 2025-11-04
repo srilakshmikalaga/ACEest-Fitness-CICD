@@ -9,4 +9,5 @@ COPY app/ app/
 
 EXPOSE 5000
 
-CMD ["python", "app/ACEest_Fitness.py"]
+CMD ["python", "app/web_app.py"]
+
