@@ -24,11 +24,12 @@ pipeline {
         stage('Run Tests') {
             steps {
                 sh '''
-                    export PATH=$PATH:$HOME/.local/bin
-                    python3 -m pytest -q
+                export PATH=$PATH:$HOME/.local/bin
+                python3 -m pytest -q
                 '''
             }
         }
+
 
         stage('Build Docker Image') {
             steps {
