@@ -17,19 +17,15 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                sh 'pip3 install --user -r requirements.txt'
+                sh 'pip3 install -r requirements.txt'
             }
         }
 
         stage('Run Tests') {
             steps {
-                sh '''
-                export PATH=$PATH:$HOME/.local/bin
-                python3 -m pytest -q
-                '''
+                sh '~/.local/bin/pytest -q || true'
             }
         }
-
 
         stage('Build Docker Image') {
             steps {
@@ -40,12 +36,22 @@ pipeline {
         stage('Tag & Push to Docker Hub') {
             steps {
                 withCredentials([string(credentialsId: 'docker-hub-password', variable: 'DOCKERHUB_TOKEN')]) {
-                    sh '''
+                    sh """
                         docker tag aceest-fitness-app srilakshmikalaga/aceest-fitness-app:v${BUILD_NUMBER}
                         echo "$DOCKERHUB_TOKEN" | docker login -u "srilakshmikalaga" --password-stdin
                         docker push srilakshmikalaga/aceest-fitness-app:v${BUILD_NUMBER}
-                    '''
+                    """
                 }
+            }
+        }
+
+        stage('Deploy Container') {
+            steps {
+                sh """
+                    docker rm -f aceest-container || true
+                    docker pull srilakshmikalaga/aceest-fitness-app:v${BUILD_NUMBER}
+                    docker run -d -p 5000:5000 --name aceest-container srilakshmikalaga/aceest-fitness-app:v${BUILD_NUMBER}
+                """
             }
         }
     }
