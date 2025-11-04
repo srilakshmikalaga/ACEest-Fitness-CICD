@@ -23,9 +23,10 @@ pipeline {
 
         stage('Run Tests') {
             steps {
-                sh '~/.local/bin/pytest -q || true'
+                sh 'export PYTHONPATH=$PYTHONPATH:$WORKSPACE && pytest -q'
             }
         }
+
 
         stage('Build Docker Image') {
             steps {
