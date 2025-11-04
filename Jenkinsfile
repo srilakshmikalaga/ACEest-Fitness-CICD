@@ -1,8 +1,13 @@
 pipeline {
     agent any
 
-    stages {
+    environment {
+        DOCKERHUB_USER = "srilakshmikalaga"
+        IMAGE_NAME = "aceest-fitness-app"
+        IMAGE_TAG = "v${BUILD_NUMBER}"
+    }
 
+    stages {
         stage('Checkout Code') {
             steps {
                 checkout([$class: 'GitSCM',
@@ -27,22 +32,30 @@ pipeline {
             }
         }
 
-
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t aceest-fitness-app .'
+                sh "docker build -t ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG} ."
             }
         }
 
-        stage('Tag & Push to Docker Hub') {
+        stage('Push to Docker Hub') {
             steps {
-                withCredentials([string(credentialsId: 'docker-hub-password', variable: 'DOCKERHUB_TOKEN')]) {
+                withCredentials([string(credentialsId: 'docker-hub-password', variable: 'DOCKER_PASS')]) {
                     sh """
-                    docker tag aceest-fitness-app srilakshmikalaga/aceest-fitness-app:v${BUILD_NUMBER}
-                    echo "$DOCKERHUB_TOKEN" | docker login -u "srilakshmikalaga" --password-stdin
-                    docker push srilakshmikalaga/aceest-fitness-app:v${BUILD_NUMBER}
+                    echo "$DOCKER_PASS" | docker login -u $DOCKERHUB_USER --password-stdin
+                    docker push ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}
                     """
                 }
+            }
+        }
+
+        stage('Deploy To Kubernetes') {
+            steps {
+                sh """
+                sed -i 's|image:.*|image: ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}|g' k8s/deployment.yaml
+                kubectl apply -f k8s/deployment.yaml
+                kubectl apply -f k8s/service.yaml
+                """
             }
         }
     }
