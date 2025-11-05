@@ -1,6 +1,11 @@
 pipeline {
     agent any
 
+    environment {
+        PYTHONPATH = '.'
+        PATH = "/var/lib/jenkins/.local/bin:${env.PATH}"
+    }
+
     stages {
         stage('Checkout Code') {
             steps {
@@ -22,7 +27,11 @@ pipeline {
 
         stage('Run Tests') {
             steps {
-                sh 'export PATH=$PATH:/var/lib/jenkins/.local/bin && PYTHONPATH=. pytest -q || true'
+                sh '''
+                    echo "Running tests..."
+                    cd $WORKSPACE
+                    PYTHONPATH=. pytest -q
+                '''
             }
         }
 
@@ -35,22 +44,23 @@ pipeline {
         stage('Tag & Push to Docker Hub') {
             steps {
                 withCredentials([string(credentialsId: 'docker-hub-password', variable: 'DOCKERHUB_TOKEN')]) {
-                    sh """
+                    sh '''
                         docker tag aceest-fitness-app srilakshmikalaga/aceest-fitness-app:v${BUILD_NUMBER}
                         echo "$DOCKERHUB_TOKEN" | docker login -u "srilakshmikalaga" --password-stdin
                         docker push srilakshmikalaga/aceest-fitness-app:v${BUILD_NUMBER}
-                    """
+                    '''
                 }
             }
         }
 
         stage('Deploy Container') {
             steps {
-                sh """
+                sh '''
+                    echo "Deploying new container..."
                     docker rm -f aceest-container || true
                     docker pull srilakshmikalaga/aceest-fitness-app:v${BUILD_NUMBER}
                     docker run -d -p 5000:5000 --name aceest-container srilakshmikalaga/aceest-fitness-app:v${BUILD_NUMBER}
-                """
+                '''
             }
         }
     }
