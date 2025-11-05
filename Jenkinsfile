@@ -21,18 +21,20 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                echo "Installing Python dependencies..."
+                echo "Installing dependencies..."
                 sh 'pip3 install -r requirements.txt --user'
             }
         }
 
         stage('Run Tests') {
             steps {
-                echo "Running Pytest..."
+                echo "Running tests..."
                 sh '''
                     cd $WORKSPACE
+                    echo "Current working directory: $(pwd)"
+                    echo "Python path: $PYTHONPATH"
                     export PYTHONPATH=$WORKSPACE
-                    pytest -q
+                    /var/lib/jenkins/.local/bin/pytest -q || exit 1
                 '''
             }
         }
@@ -59,7 +61,7 @@ pipeline {
 
         stage('Deploy Container') {
             steps {
-                echo "Deploying the container..."
+                echo "Deploying container..."
                 sh '''
                     docker rm -f aceest-container || true
                     docker pull srilakshmikalaga/aceest-fitness-app:v${BUILD_NUMBER}
@@ -71,10 +73,10 @@ pipeline {
 
     post {
         success {
-            echo "✅ Build and Deployment successful! App running on port 5000."
+            echo "✅ Build and deploy successful!"
         }
         failure {
-            echo "❌ Build failed. Check logs in Jenkins console output."
+            echo "❌ Build failed. Check Jenkins logs."
         }
     }
 }
