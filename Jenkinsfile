@@ -31,9 +31,9 @@ pipeline {
                 echo "Running tests..."
                 sh '''
                     cd $WORKSPACE
-                    echo "Current working directory: $(pwd)"
-                    echo "Python path: $PYTHONPATH"
                     export PYTHONPATH=$WORKSPACE
+                    echo "PYTHONPATH: $PYTHONPATH"
+                    echo "Running pytest from: $(pwd)"
                     /var/lib/jenkins/.local/bin/pytest -q || exit 1
                 '''
             }
@@ -61,7 +61,7 @@ pipeline {
 
         stage('Deploy Container') {
             steps {
-                echo "Deploying container..."
+                echo "Deploying the container..."
                 sh '''
                     docker rm -f aceest-container || true
                     docker pull srilakshmikalaga/aceest-fitness-app:v${BUILD_NUMBER}
@@ -73,10 +73,10 @@ pipeline {
 
     post {
         success {
-            echo "✅ Build and deploy successful!"
+            echo "✅ Build and Deployment successful! App running on port 5000."
         }
         failure {
-            echo "❌ Build failed. Check Jenkins logs."
+            echo "❌ Build failed. Check logs in Jenkins console output."
         }
     }
 }
