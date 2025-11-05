@@ -13,7 +13,20 @@ spec:
         app: aceest-fitness
     spec:
       containers:
-        - name: aceest-fitness
-          image: srilakshmikalaga/aceest-fitness-app:v2
-          ports:
-            - containerPort: 5000
+      - name: aceest-fitness
+        image: srilakshmikalaga/aceest-fitness-app:v44
+        ports:
+        - containerPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aceest-fitness-service
+spec:
+  type: NodePort
+  selector:
+    app: aceest-fitness
+  ports:
+    - port: 5000
+      targetPort: 5000
+      nodePort: 30001
