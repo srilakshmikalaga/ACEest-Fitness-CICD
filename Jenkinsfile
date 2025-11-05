@@ -25,16 +25,19 @@ pipeline {
     }
 
     stage('Run Tests') {
-      steps {
-        sh '''
-          echo "PYTHONPATH=$PYTHONPATH"
-          echo "PATH=$PATH"
-          ls -la "$WORKSPACE"
-          python3 -c "import sys, pkgutil; print('sys.path[:5]=', sys.path[:5]); print('find app loader=', pkgutil.find_loader('app'))"
-          python3 -m pytest -q
-        '''
-      }
+    steps {
+        echo "Running unit tests..."
+        sh """
+            export PATH=\$PATH:/var/lib/jenkins/.local/bin
+            export PYTHONPATH="\$WORKSPACE:\$WORKSPACE/app"
+            echo "PYTHONPATH set to: \$PYTHONPATH"
+            echo "WORKSPACE is: \$WORKSPACE"
+            ls -la "\$WORKSPACE"
+            python3 -m pytest -q --disable-warnings
+        """
     }
+}
+
 
     stage('Build Docker Image') {
       steps {
