@@ -26,15 +26,17 @@ pipeline {
 stage('Run Tests') {
     steps {
         echo "Running unit tests..."
-        sh """
-            export PATH=\$PATH:/var/lib/jenkins/.local/bin
-            export PYTHONPATH="\$WORKSPACE:\$WORKSPACE/app"
-            echo "PYTHONPATH set to: \$PYTHONPATH"
-            cd \$WORKSPACE
-            python3 -m pytest -q --disable-warnings
-        """
+        sh '''
+            echo "Setting environment..."
+            export PATH=$PATH:/var/lib/jenkins/.local/bin
+            export PYTHONPATH=$WORKSPACE:$WORKSPACE/app
+            echo "PYTHONPATH = $PYTHONPATH"
+            cd $WORKSPACE
+            python3 -m pytest -q --disable-warnings --cache-clear
+        '''
     }
 }
+
 
 
 
