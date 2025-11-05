@@ -27,11 +27,7 @@ stage('Run Tests') {
     steps {
         echo "Running unit tests..."
         sh '''
-            echo "Setting up environment..."
             export PATH=$PATH:/var/lib/jenkins/.local/bin
-            export PYTHONPATH=$(pwd):$(pwd)/app
-            echo "PYTHONPATH is: $PYTHONPATH"
-            cd $(pwd)
             python3 -m pytest -q --disable-warnings --cache-clear
         '''
     }
