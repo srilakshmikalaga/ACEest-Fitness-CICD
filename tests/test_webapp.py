@@ -1,6 +1,7 @@
 import json
 import pytest
-from app.web_app import app
+from app.web_app import fitness_app as app
+
 
 @pytest.fixture
 def client():
