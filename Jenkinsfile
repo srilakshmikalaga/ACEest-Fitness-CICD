@@ -2,18 +2,19 @@ pipeline {
   agent any
 
   environment {
-    # ensure pytest installed location is available
     PATH = "${env.PATH}:/var/lib/jenkins/.local/bin"
-    # optional: set default pythonpath globally for pipeline
-    PYTHONPATH = "${WORKSPACE}:${WORKSPACE}/app"
   }
 
   stages {
+
     stage('Checkout Code') {
       steps {
         checkout([$class: 'GitSCM',
           branches: [[name: '*/main']],
-          userRemoteConfigs: [[url: 'https://github.com/srilakshmikalaga/ACEest-Fitness-CICD.git', credentialsId: 'github-token']]
+          userRemoteConfigs: [[
+            url: 'https://github.com/srilakshmikalaga/ACEest-Fitness-CICD.git',
+            credentialsId: 'github-token'
+          ]]
         ])
       }
     }
@@ -23,21 +24,18 @@ pipeline {
         sh 'pip3 install -r requirements.txt --user'
       }
     }
-stage('Run Tests') {
-    steps {
+
+    stage('Run Tests') {
+      steps {
         echo "Running unit tests..."
         sh '''
-            export PATH=$PATH:/var/lib/jenkins/.local/bin
-            python3 -m pytest -q --disable-warnings --cache-clear
+          echo "Setting up environment..."
+          export PATH=$PATH:/var/lib/jenkins/.local/bin
+          echo "Running pytest..."
+          python3 -m pytest -q --disable-warnings --cache-clear
         '''
+      }
     }
-}
-
-
-
-
-
-
 
     stage('Build Docker Image') {
       steps {
