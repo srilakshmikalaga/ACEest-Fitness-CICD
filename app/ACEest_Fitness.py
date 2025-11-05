@@ -1,4 +1,8 @@
-import tkinter as tk
+try:
+    import tkinter as tk
+except ImportError:
+    tk = None
+
 from tkinter import messagebox
 
 class FitnessTrackerApp:
