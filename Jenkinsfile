@@ -1,62 +1,67 @@
 pipeline {
-    agent any
+  agent any
 
-    stages {
-        stage('Checkout Code') {
-            steps {
-                checkout([$class: 'GitSCM',
-                    branches: [[name: '*/main']],
-                    userRemoteConfigs: [[
-                        url: 'https://github.com/srilakshmikalaga/ACEest-Fitness-CICD.git',
-                        credentialsId: 'github-token'
-                    ]]
-                ])
-            }
-        }
+  environment {
+    # ensure pytest installed location is available
+    PATH = "${env.PATH}:/var/lib/jenkins/.local/bin"
+    # optional: set default pythonpath globally for pipeline
+    PYTHONPATH = "${WORKSPACE}:${WORKSPACE}/app"
+  }
 
-        stage('Install Dependencies') {
-            steps {
-                sh 'pip3 install -r requirements.txt --user'
-            }
-        }
-
-        stage('Run Tests') {
-            steps {
-                echo "Running unit tests..."
-                sh '''
-                    export PYTHONPATH=$WORKSPACE/app:$WORKSPACE
-                    echo "PYTHONPATH set to: $PYTHONPATH"
-                    /var/lib/jenkins/.local/bin/pytest -q --disable-warnings
-                '''
-            }
-        }
-
-        stage('Build Docker Image') {
-            steps {
-                sh 'docker build -t aceest-fitness-app .'
-            }
-        }
-
-        stage('Tag & Push to Docker Hub') {
-            steps {
-                withCredentials([string(credentialsId: 'docker-hub-password', variable: 'DOCKERHUB_TOKEN')]) {
-                    sh '''
-                        docker tag aceest-fitness-app srilakshmikalaga/aceest-fitness-app:v${BUILD_NUMBER}
-                        echo "$DOCKERHUB_TOKEN" | docker login -u "srilakshmikalaga" --password-stdin
-                        docker push srilakshmikalaga/aceest-fitness-app:v${BUILD_NUMBER}
-                    '''
-                }
-            }
-        }
-
-        stage('Deploy Container') {
-            steps {
-                sh '''
-                    docker rm -f aceest-container || true
-                    docker pull srilakshmikalaga/aceest-fitness-app:v${BUILD_NUMBER}
-                    docker run -d -p 5000:5000 --name aceest-container srilakshmikalaga/aceest-fitness-app:v${BUILD_NUMBER}
-                '''
-            }
-        }
+  stages {
+    stage('Checkout Code') {
+      steps {
+        checkout([$class: 'GitSCM',
+          branches: [[name: '*/main']],
+          userRemoteConfigs: [[url: 'https://github.com/srilakshmikalaga/ACEest-Fitness-CICD.git', credentialsId: 'github-token']]
+        ])
+      }
     }
+
+    stage('Install Dependencies') {
+      steps {
+        sh 'pip3 install -r requirements.txt --user'
+      }
+    }
+
+    stage('Run Tests') {
+      steps {
+        sh '''
+          echo "PYTHONPATH=$PYTHONPATH"
+          echo "PATH=$PATH"
+          ls -la "$WORKSPACE"
+          python3 -c "import sys, pkgutil; print('sys.path[:5]=', sys.path[:5]); print('find app loader=', pkgutil.find_loader('app'))"
+          python3 -m pytest -q
+        '''
+      }
+    }
+
+    stage('Build Docker Image') {
+      steps {
+        sh 'docker build -t aceest-fitness-app .'
+      }
+    }
+
+    stage('Tag & Push to Docker Hub') {
+      steps {
+        withCredentials([string(credentialsId: 'docker-hub-password', variable: 'DOCKERHUB_TOKEN')]) {
+          sh '''
+            docker tag aceest-fitness-app srilakshmikalaga/aceest-fitness-app:v${BUILD_NUMBER}
+            echo "$DOCKERHUB_TOKEN" | docker login -u "srilakshmikalaga" --password-stdin
+            docker push srilakshmikalaga/aceest-fitness-app:v${BUILD_NUMBER}
+          '''
+        }
+      }
+    }
+
+    stage('Deploy Container') {
+      steps {
+        sh '''
+          docker rm -f aceest-container || true
+          docker pull srilakshmikalaga/aceest-fitness-app:v${BUILD_NUMBER}
+          docker run -d -p 5000:5000 --name aceest-container srilakshmikalaga/aceest-fitness-app:v${BUILD_NUMBER}
+        '''
+      }
+    }
+  }
 }
