@@ -43,23 +43,23 @@ pipeline {
       }
     }
 
-        stage('Push to Docker Hub') {
-      steps {
-        withCredentials([string(credentialsId: 'docker-hub-password', variable: 'DOCKERHUB_TOKEN')]) {
-          sh '''
-            echo "🔹 Logging in to Docker Hub..."
-            echo "$DOCKERHUB_TOKEN" | docker login -u "srilakshmikalaga" --password-stdin
+    stage('Push to Docker Hub') {
+  steps {
+    withCredentials([string(credentialsId: 'docker-hub-password', variable: 'DOCKERHUB_TOKEN')]) {
+      sh '''
+        echo "🔹 Logging in to Docker Hub..."
+        echo "$DOCKERHUB_TOKEN" | docker login -u "srilakshmikalaga" --password-stdin
 
-            echo "🔹 Tagging image for Docker Hub..."
-            docker tag aceest-fitness-app srilakshmikalaga/aceest-fitness-app:v${BUILD_NUMBER}
+        echo "🔹 Tagging image..."
+        docker tag aceest-fitness-app srilakshmikalaga/aceest-fitness-app:v${BUILD_NUMBER}
 
-            echo "🔹 Pushing image to Docker Hub..."
-            docker push srilakshmikalaga/aceest-fitness-app:v${BUILD_NUMBER}
-
-            echo "✅ Image pushed successfully: srilakshmikalaga/aceest-fitness-app:v${BUILD_NUMBER}"
-          '''
-        }
-      }
+        echo "🔹 Pushing image..."
+        docker push srilakshmikalaga/aceest-fitness-app:v${BUILD_NUMBER}
+      '''
     }
+  }
+}
+
+
   }
 }
