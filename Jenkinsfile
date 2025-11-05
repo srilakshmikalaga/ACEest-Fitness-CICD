@@ -23,22 +23,19 @@ pipeline {
         sh 'pip3 install -r requirements.txt --user'
       }
     }
-
-   stage('Run Tests') {
+stage('Run Tests') {
     steps {
         echo "Running unit tests..."
         sh """
             export PATH=\$PATH:/var/lib/jenkins/.local/bin
             export PYTHONPATH="\$WORKSPACE:\$WORKSPACE/app"
-            echo "PYTHONPATH = \$PYTHONPATH"
-            echo "Running from directory: \$(pwd)"
-            ls -la \$WORKSPACE
+            echo "PYTHONPATH set to: \$PYTHONPATH"
             cd \$WORKSPACE
-            python3 -c "import sys; print('sys.path:', sys.path)"
             python3 -m pytest -q --disable-warnings
         """
     }
 }
+
 
 
 
