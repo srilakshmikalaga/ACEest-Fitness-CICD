@@ -28,14 +28,15 @@ stage('Run Tests') {
         echo "Running unit tests..."
         sh '''
             echo "Setting environment..."
-            export PATH=$PATH:/var/lib/jenkins/.local/bin
-            export PYTHONPATH=$WORKSPACE:$WORKSPACE/app
-            echo "PYTHONPATH = $PYTHONPATH"
             cd $WORKSPACE
+            export PATH=$PATH:/var/lib/jenkins/.local/bin
+            export PYTHONPATH=$WORKSPACE:$WORKSPACE/app:$WORKSPACE/ACEest-Fitness-CICD/app
+            echo "PYTHONPATH = $PYTHONPATH"
             python3 -m pytest -q --disable-warnings --cache-clear
         '''
     }
 }
+
 
 
 
