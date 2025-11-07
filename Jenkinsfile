@@ -36,6 +36,21 @@ pipeline {
         '''
       }
     }
+    stage('SonarQube Analysis') {
+  environment {
+    SONAR_TOKEN = credentials('sonar-token')
+  }
+  steps {
+    sh '''
+      sonar-scanner \
+        -Dsonar.projectKey=aceest-fitness \
+        -Dsonar.sources=. \
+        -Dsonar.host.url=http://localhost:9000 \
+        -Dsonar.login=$SONAR_TOKEN
+    '''
+  }
+}
+
 
     stage('Build Docker Image') {
       steps {
