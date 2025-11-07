@@ -59,6 +59,21 @@ pipeline {
     }
   }
 }
+stage('Deploy to Kubernetes (TEST)') {
+  steps {
+    sh '''
+      echo "Applying Kubernetes manifests..."
+      kubectl apply -f k8s/blue-deployment.yaml
+      kubectl apply -f k8s/service.yaml
+
+      echo "Verifying deployment..."
+      kubectl rollout status deployment/aceest-fitness-deployment-blue
+      kubectl get pods -l version=blue
+    '''
+  }
+}
+
+
 
 
   }
