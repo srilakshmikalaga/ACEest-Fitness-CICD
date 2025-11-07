@@ -36,20 +36,24 @@ pipeline {
         '''
       }
     }
-    stage('SonarQube Analysis') {
+  stage('SonarQube Analysis') {
   environment {
-    SONAR_TOKEN = credentials('sonar-token')
+      SCANNER_HOME = tool 'SonarQubeScanner'
   }
   steps {
-    sh '''
-      sonar-scanner \
-        -Dsonar.projectKey=aceest-fitness \
+    withSonarQubeEnv('sonar-cloud') {
+      sh '''
+        $SCANNER_HOME/bin/sonar-scanner \
+        -Dsonar.projectKey=ACEest-Fitness-CICD \
+        -Dsonar.organization=srilakshmikalaga \
         -Dsonar.sources=. \
-        -Dsonar.host.url=http://localhost:9000 \
-        -Dsonar.login=$SONAR_TOKEN
-    '''
+        -Dsonar.python.version=3.8 \
+        -Dsonar.host.url=https://sonarcloud.io
+      '''
+    }
   }
 }
+
 
 
     stage('Build Docker Image') {
