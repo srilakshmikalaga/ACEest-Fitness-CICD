@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aceest-fitness-shadow
+  labels:
+    app: aceest-fitness
+    role: shadow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aceest-fitness
+      role: shadow
+  template:
+    metadata:
+      labels:
+        app: aceest-fitness
+        role: shadow
+        version: shadow
+    spec:
+      containers:
+      - name: aceest-fitness
+        image: srilakshmikalaga/aceest-fitness-app:v44
+        ports:
+        - containerPort: 5000

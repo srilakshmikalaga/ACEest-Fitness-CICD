@@ -1,0 +1,20 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: aceest-fitness-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/mirror-target: "aceest-fitness-shadow-service"
+    nginx.ingress.kubernetes.io/mirror-target-percentage: "100"
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: aceest.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: aceest-fitness-service
+            port:
+              number: 5000
