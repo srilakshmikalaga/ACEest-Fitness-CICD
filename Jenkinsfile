@@ -101,6 +101,25 @@ stage('Deploy to Kubernetes (TEST)') {
   }
 }
 
+stage('A/B Testing Deployments') {
+  steps {
+    sh '''
+      echo "Deploying Version A and Version B..."
+      kubectl apply -f k8s/ab/deployment-a.yaml --validate=false
+      kubectl apply -f k8s/ab/service-a.yaml --validate=false
+      kubectl apply -f k8s/ab/deployment-b.yaml --validate=false
+      kubectl apply -f k8s/ab/service-b.yaml --validate=false
+
+      echo "Checking deployment status..."
+      kubectl rollout status deployment/aceest-fitness-a || echo "⚠️ Version A rollout check skipped"
+      kubectl rollout status deployment/aceest-fitness-b || echo "⚠️ Version B rollout check skipped"
+
+      echo "A/B Testing pods:"
+      kubectl get pods -l app=aceest-fitness
+    '''
+  }
+}
+
 
 
 

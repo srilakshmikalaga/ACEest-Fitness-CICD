@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aceest-fitness-a
+  labels:
+    app: aceest-fitness
+    version: a
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: aceest-fitness
+      version: a
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: aceest-fitness
+        version: a
+    spec:
+      containers:
+        - name: aceest-fitness-app
+          image: srilakshmikalaga/aceest-fitness-app:v52  # Version A
+          ports:
+            - containerPort: 5000
