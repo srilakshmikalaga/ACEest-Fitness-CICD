@@ -1,0 +1,3 @@
+curl -u 89e994693e1d3f91082ab230dd78858d2fe65ae6: "https://sonarcloud.io/api/measures/component?component=ACEest-Fitness-CICD&metricKeys=coverage,bugs,vulnerabilities,code_smells,duplicated_lines_density"
+curl -u 89e994693e1d3f91082ab230dd78858d2fe65ae6: "https://sonarcloud.io/api/measures/component?component=ACEest-Fitness-CICD&metricKeys=coverage,bugs,vulnerabilities,code_smells,duplicated_lines_density" > sonar_report.json
+curl -u 89e994693e1d3f91082ab230dd78858d2fe65ae6: "https://sonarcloud.io/api/issues/search?componentKeys=ACEest-Fitness-CICD&types=BUG,VULNERABILITY,CODE_SMELL&ps=500" > sonar_issues.json
