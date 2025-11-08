@@ -25,8 +25,8 @@ pipeline {
       }
     }
 
-  stage('Run Tests') {
-    steps {
+    stage('Run Tests') {
+      steps {
         echo "Running unit tests with coverage..."
         sh '''
           echo "Setting up environment..."
@@ -38,31 +38,27 @@ pipeline {
           echo "Running pytest with coverage..."
           pytest --cov=. --cov-report=xml --disable-warnings --cache-clear
         '''
+      }
     }
-}
 
-stage('SonarQube Analysis') {
-    environment {
+    stage('SonarQube Analysis') {
+      environment {
         SCANNER_HOME = tool 'SonarScanner'
-    }
-    steps {
+      }
+      steps {
         withSonarQubeEnv('sonar-cloud') {
-            sh '''
-              $SCANNER_HOME/bin/sonar-scanner \
-              -Dsonar.projectKey=ACEest-Fitness-CICD \
-              -Dsonar.organization=srilakshmikalaga \
-              -Dsonar.sources=. \
-              -Dsonar.python.coverage.reportPaths=coverage.xml \
-              -Dsonar.python.version=3.8 \
-              -Dsonar.host.url=https://sonarcloud.io
-            '''
+          sh '''
+            $SCANNER_HOME/bin/sonar-scanner \
+            -Dsonar.projectKey=ACEest-Fitness-CICD \
+            -Dsonar.organization=srilakshmikalaga \
+            -Dsonar.sources=. \
+            -Dsonar.python.coverage.reportPaths=coverage.xml \
+            -Dsonar.python.version=3.8 \
+            -Dsonar.host.url=https://sonarcloud.io
+          '''
         }
+      }
     }
-}
-
-
-
-
 
     stage('Build Docker Image') {
       steps {
@@ -71,58 +67,68 @@ stage('SonarQube Analysis') {
     }
 
     stage('Push to Docker Hub') {
-  steps {
-    withCredentials([string(credentialsId: 'docker-hub-password', variable: 'DOCKERHUB_TOKEN')]) {
-      sh '''
-        echo "🔹 Logging in to Docker Hub..."
-        echo "$DOCKERHUB_TOKEN" | docker login -u "srilakshmikalaga" --password-stdin
+      steps {
+        withCredentials([string(credentialsId: 'docker-hub-password', variable: 'DOCKERHUB_TOKEN')]) {
+          sh '''
+            echo "🔹 Logging in to Docker Hub..."
+            echo "$DOCKERHUB_TOKEN" | docker login -u "srilakshmikalaga" --password-stdin
 
-        echo "🔹 Tagging image..."
-        docker tag aceest-fitness-app srilakshmikalaga/aceest-fitness-app:v${BUILD_NUMBER}
+            echo "🔹 Tagging image..."
+            docker tag aceest-fitness-app srilakshmikalaga/aceest-fitness-app:v${BUILD_NUMBER}
 
-        echo "🔹 Pushing image..."
-        docker push srilakshmikalaga/aceest-fitness-app:v${BUILD_NUMBER}
-      '''
+            echo "🔹 Pushing image..."
+            docker push srilakshmikalaga/aceest-fitness-app:v${BUILD_NUMBER}
+          '''
+        }
+      }
     }
-  }
-}
-stage('Deploy to Kubernetes (TEST)') {
-  steps {
-    sh '''
-      echo "Applying Kubernetes manifests (skipping validation check)..."
-      kubectl apply -f k8s/blue-deployment.yaml --validate=false
-      kubectl apply -f k8s/service.yaml --validate=false
 
-      echo "Verifying deployment rollout..."
-      kubectl rollout status deployment/aceest-fitness-deployment-blue || echo "⚠️ Rollout check skipped"
-      echo "Fetching Blue deployment pods..."
-      kubectl get pods -l version=blue || echo "⚠️ Unable to fetch pods, cluster might be running locally only"
-    '''
-  }
-}
+    stage('Deploy to Kubernetes (TEST)') {
+      steps {
+        sh '''
+          echo "Applying Kubernetes manifests (Rolling Update enabled)..."
+          kubectl apply -f k8s/blue-deployment.yaml --validate=false
+          kubectl apply -f k8s/service.yaml --validate=false
 
-stage('A/B Testing Deployments') {
-  steps {
-    sh '''
-      echo "Deploying Version A and Version B..."
-      kubectl apply -f k8s/ab/deployment-a.yaml --validate=false
-      kubectl apply -f k8s/ab/service-a.yaml --validate=false
-      kubectl apply -f k8s/ab/deployment-b.yaml --validate=false
-      kubectl apply -f k8s/ab/service-b.yaml --validate=false
+          echo "Verifying deployment rollout..."
+          if ! kubectl rollout status deployment/aceest-fitness-deployment-blue --timeout=120s; then
+            echo "❌ Rollout failed! Initiating rollback..."
+            kubectl rollout undo deployment/aceest-fitness-deployment-blue
+            exit 1
+          fi
 
-      echo "Checking deployment status..."
-      kubectl rollout status deployment/aceest-fitness-a || echo "⚠️ Version A rollout check skipped"
-      kubectl rollout status deployment/aceest-fitness-b || echo "⚠️ Version B rollout check skipped"
+          echo "Fetching Blue deployment pods..."
+          kubectl get pods -l version=blue || echo "⚠️ Unable to fetch pods"
+        '''
+      }
+    }
 
-      echo "A/B Testing pods:"
-      kubectl get pods -l app=aceest-fitness
-    '''
-  }
-}
+    stage('A/B Testing Deployments') {
+      steps {
+        sh '''
+          echo "Deploying Version A and Version B (RollingUpdate strategy)..."
+          kubectl apply -f k8s/ab/deployment-a.yaml --validate=false
+          kubectl apply -f k8s/ab/service-a.yaml --validate=false
+          kubectl apply -f k8s/ab/deployment-b.yaml --validate=false
+          kubectl apply -f k8s/ab/service-b.yaml --validate=false
 
+          echo "Checking rollout status..."
+          if ! kubectl rollout status deployment/aceest-fitness-a --timeout=120s; then
+            echo "❌ Deployment A failed. Rolling back..."
+            kubectl rollout undo deployment/aceest-fitness-a
+            exit 1
+          fi
 
+          if ! kubectl rollout status deployment/aceest-fitness-b --timeout=120s; then
+            echo "❌ Deployment B failed. Rolling back..."
+            kubectl rollout undo deployment/aceest-fitness-b
+            exit 1
+          fi
 
-
-
+          echo "✅ All A/B Testing deployments successful!"
+          kubectl get pods -l app=aceest-fitness
+        '''
+      }
+    }
   }
 }
