@@ -36,9 +36,9 @@ pipeline {
         '''
       }
     }
-  stage('SonarQube Analysis') {
+ stage('SonarQube Analysis') {
   environment {
-      SCANNER_HOME = tool 'SonarQubeScanner'
+    SCANNER_HOME = tool 'SonarScanner'
   }
   steps {
     withSonarQubeEnv('sonar-cloud') {
@@ -53,6 +53,7 @@ pipeline {
     }
   }
 }
+
 
 
 
