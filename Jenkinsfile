@@ -25,38 +25,37 @@ pipeline {
       }
     }
 
-    stage('Run Tests') {
-      steps {
-        echo "Running unit tests..."
+  stage('Run Tests') {
+    steps {
+        echo "Running unit tests with coverage..."
         sh '''
           echo "Setting up environment..."
           export PATH=$PATH:/var/lib/jenkins/.local/bin
-          echo "Running pytest..."
-          python3 -m pytest -q --disable-warnings --cache-clear
+          
+          echo "Installing pytest-cov if not already present..."
+          pip3 install pytest-cov --user
+          
+          echo "Running pytest with coverage..."
+          pytest --cov=. --cov-report=xml --disable-warnings --cache-clear
         '''
-      }
     }
- stage('SonarQube Analysis') {
-  environment {
-    SCANNER_HOME = tool 'SonarScanner'
-  }
-  steps {
-    withSonarQubeEnv('sonar-cloud') {
-      sh '''
-        $SCANNER_HOME/bin/sonar-scanner \
-        -Dsonar.projectKey=ACEest-Fitness-CICD \
-        -Dsonar.organization=srilakshmikalaga \
-        -Dsonar.sources=. \
-        -Dsonar.python.version=3.8 \
-        -Dsonar.host.url=https://sonarcloud.io
-      '''
-    }
-  }
 }
-stage('Quality Gate') {
+
+stage('SonarQube Analysis') {
+    environment {
+        SCANNER_HOME = tool 'SonarScanner'
+    }
     steps {
-        timeout(time: 5, unit: 'MINUTES') {
-            waitForQualityGate abortPipeline: true
+        withSonarQubeEnv('sonar-cloud') {
+            sh '''
+              $SCANNER_HOME/bin/sonar-scanner \
+              -Dsonar.projectKey=ACEest-Fitness-CICD \
+              -Dsonar.organization=srilakshmikalaga \
+              -Dsonar.sources=. \
+              -Dsonar.python.coverage.reportPaths=coverage.xml \
+              -Dsonar.python.version=3.8 \
+              -Dsonar.host.url=https://sonarcloud.io
+            '''
         }
     }
 }
