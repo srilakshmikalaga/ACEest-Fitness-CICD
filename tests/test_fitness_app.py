@@ -157,3 +157,49 @@ def test_view_workouts_with_entries(monkeypatch, mock_tkinter_app):
     monkeypatch.setattr("app.ACEest_Fitness.messagebox.showinfo", fake_info)
     app.view_workouts()
     assert "Yoga" in called["msg"]
+def test_add_multiple_workouts(monkeypatch, mock_tkinter_app):
+    """Test adding multiple workouts back-to-back."""
+    app = mock_tkinter_app
+    app.workout_entry.get.side_effect = ["Squats", "Plank"]
+    app.duration_entry.get.side_effect = ["20", "5"]
+
+    monkeypatch.setattr("app.ACEest_Fitness.messagebox.showinfo", lambda *a, **kw: None)
+    for _ in range(2):
+        app.add_workout()
+
+    assert len(app.workouts) == 2
+    assert any(w["workout"] == "Squats" for w in app.workouts)
+
+def test_clear_entries_after_add(monkeypatch, mock_tkinter_app):
+    """Ensure entries are cleared after adding a workout."""
+    app = mock_tkinter_app
+    app.workout_entry.get.return_value = "Push-ups"
+    app.duration_entry.get.return_value = "15"
+
+    cleared = {"called": False}
+    def fake_delete(*a, **kw): cleared["called"] = True
+    app.workout_entry.delete = fake_delete
+    app.duration_entry.delete = fake_delete
+
+    monkeypatch.setattr("app.ACEest_Fitness.messagebox.showinfo", lambda *a, **kw: None)
+    app.add_workout()
+
+    assert cleared["called"]
+
+def test_view_workouts_display_format(monkeypatch, mock_tkinter_app):
+    """Check formatting of workout list string."""
+    app = mock_tkinter_app
+    app.workouts = [
+        {"workout": "Yoga", "duration": 30},
+        {"workout": "Cycling", "duration": 45},
+    ]
+    called = {}
+
+    def fake_info(title, msg):
+        called["msg"] = msg
+
+    monkeypatch.setattr("app.ACEest_Fitness.messagebox.showinfo", fake_info)
+    app.view_workouts()
+
+    assert "Yoga" in called["msg"]
+    assert "Cycling" in called["msg"]
