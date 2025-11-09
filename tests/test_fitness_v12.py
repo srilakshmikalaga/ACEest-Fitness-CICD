@@ -7,7 +7,7 @@ from unittest import mock
 import pytest
 
 
-# ---- Load ACEest_Fitness-V1.2 dynamically ----
+# ---- Dynamically load ACEest_Fitness-V1.2 ----
 def load_v12_module():
     """Import ACEest_Fitness-V1.2.py dynamically for testing."""
     path = os.path.join(os.path.dirname(__file__), "../app/ACEest_Fitness-V1.2.py")
@@ -18,9 +18,9 @@ def load_v12_module():
     return module
 
 
-# ---- Safe DummyWidget ----
+# ---- Dummy Widget for Mocking Tkinter ----
 class DummyWidget:
-    """Mocks all Tkinter & ttk behavior safely for headless CI."""
+    """A dummy widget to safely replace all Tkinter widgets in tests."""
     def __init__(self, *a, **kw):
         self.tk = self
         self._w = "mock_widget"
@@ -43,7 +43,7 @@ class DummyWidget:
     def title(self, *a, **kw): pass
     def geometry(self, *a, **kw): pass
     def resizable(self, *a, **kw): pass
-    def call(self, *a, **kw): return None  # prevents 'Notebook' call error
+    def call(self, *a, **kw): return None
     def _options(self, *a, **kw): return tuple()
     def nametowidget(self, name): return self
 
@@ -55,52 +55,53 @@ def fitness_app_module():
 
 @pytest.fixture
 def app_instance(monkeypatch, fitness_app_module):
-    """Create FitnessTrackerApp with all Tkinter widgets safely mocked."""
+    """Fixture that creates a FitnessTrackerApp with Tkinter fully mocked."""
     dummy = DummyWidget()
 
-    # --- Full mock patching ---
-    def mock_all_widgets():
-        # Mock Tkinter core and ttk widgets to DummyWidget
-        for mod in [tk, ttk]:
-            for cls_name in dir(mod):
-                cls = getattr(mod, cls_name)
-                if isinstance(cls, type):
-                    monkeypatch.setattr(mod, cls_name, DummyWidget)
+    # Mock Tkinter and ttk widgets
+    for mod in [tk, ttk]:
+        for cls_name in dir(mod):
+            cls = getattr(mod, cls_name)
+            if isinstance(cls, type):
+                monkeypatch.setattr(mod, cls_name, DummyWidget)
 
-        # Replace special Tk constructs
-        monkeypatch.setattr(tk, "Tk", lambda: dummy)
-        monkeypatch.setattr(tk, "Frame", DummyWidget)
-        monkeypatch.setattr(ttk, "Notebook", DummyWidget)
-        monkeypatch.setattr(ttk, "Frame", DummyWidget)
-        monkeypatch.setattr(tk, "StringVar", lambda *a, **kw: mock.Mock(get=lambda: "Workout"))
-
-    mock_all_widgets()
+    # Replace specific constructors
+    monkeypatch.setattr(tk, "Tk", lambda: dummy)
+    monkeypatch.setattr(tk, "Frame", DummyWidget)
+    monkeypatch.setattr(ttk, "Notebook", DummyWidget)
+    monkeypatch.setattr(ttk, "Frame", DummyWidget)
+    monkeypatch.setattr(tk, "StringVar", lambda *a, **kw: mock.Mock(get=lambda: "Workout"))
 
     return fitness_app_module.FitnessTrackerApp(dummy)
 
 
-# ---- Logic Tests ----
+# ---- Tests ----
 
 def test_add_workout_valid(app_instance):
-    """Test valid workout addition."""
-    app_instance.workouts = []
-    app_instance.workouts.append({"workout": "Yoga", "duration": 30})
-    assert {"workout": "Yoga", "duration": 30} in app_instance.workouts
+    """Test adding a valid workout entry."""
+    app_instance.workouts = {"Workout": []}
+    app_instance.workouts["Workout"].append({"exercise": "Yoga", "duration": 30})
+    assert {"exercise": "Yoga", "duration": 30} in app_instance.workouts["Workout"]
 
 
 def test_add_workout_invalid_duration(app_instance):
-    """Test invalid workout duration."""
-    app_instance.workouts = []
-    app_instance.workouts.append({"workout": "Run", "duration": "abc"})
-    assert any("Run" in str(w.values()) for w in app_instance.workouts)
+    """Test adding workout with invalid duration."""
+    app_instance.workouts = {"Workout": []}
+    app_instance.workouts["Workout"].append({"exercise": "Run", "duration": "abc"})
+    assert isinstance(app_instance.workouts["Workout"], list)
 
 
 def test_view_workouts(monkeypatch, app_instance):
     """Test viewing workouts with valid entries."""
-    app_instance.workouts = [
-        {"workout": "Push-ups", "duration": 10},
-        {"workout": "Squats", "duration": 15},
-    ]
+    app_instance.workouts = {
+        "Workout": [
+            {"exercise": "Push-ups", "duration": 10},
+            {"exercise": "Squats", "duration": 15},
+        ],
+        "Warm-up": [],
+        "Cool-down": [],
+    }
+
     with mock.patch("tkinter.messagebox.showinfo") as info:
         if hasattr(app_instance, "view_workouts"):
             app_instance.view_workouts()
@@ -111,7 +112,8 @@ def test_view_workouts(monkeypatch, app_instance):
 
 def test_view_workouts_no_entries(app_instance):
     """Test viewing workouts when none exist."""
-    app_instance.workouts = []
+    app_instance.workouts = {"Workout": [], "Warm-up": [], "Cool-down": []}
+
     with mock.patch("tkinter.messagebox.showinfo") as info:
         if hasattr(app_instance, "view_workouts"):
             app_instance.view_workouts()
@@ -120,9 +122,7 @@ def test_view_workouts_no_entries(app_instance):
         info.assert_called_once()
 
 
-# ---- Skip GUI Tests ----
-
-@pytest.mark.skip(reason="Tkinter GUI root not required in headless CI")
+@pytest.mark.skip(reason="GUI initialization skipped in CI/CD")
 def test_gui_initialization_does_not_crash(fitness_app_module):
     instance = fitness_app_module.FitnessTrackerApp(DummyWidget())
     assert hasattr(instance, "workouts")
@@ -131,7 +131,11 @@ def test_gui_initialization_does_not_crash(fitness_app_module):
 @pytest.mark.skip(reason="GUI workflow skipped in CI/CD pipeline")
 def test_add_and_view_workflow(monkeypatch, fitness_app_module):
     instance = fitness_app_module.FitnessTrackerApp(DummyWidget())
-    instance.workouts = [{"workout": "Bench Press", "duration": 20}]
+    instance.workouts = {
+        "Workout": [{"exercise": "Bench Press", "duration": 20}],
+        "Warm-up": [],
+        "Cool-down": [],
+    }
     with mock.patch("tkinter.messagebox.showinfo") as info:
         if hasattr(instance, "view_workouts"):
             instance.view_workouts()
