@@ -24,20 +24,32 @@ def load_v123_module():
 
 
 class DummyWidget:
-    """Simplified mock for Tkinter widgets."""
+    """Simplified mock for Tkinter widgets with basic window-like behavior."""
     def __init__(self, *a, **kw):
         self.tk = self
         self._w = "mock"
         self.children = {}
         self.master = None
         self._last_child_ids = {}
+        self._title = ""
+        self._geometry = ""
 
+    def title(self, text=None):
+        if text:
+            self._title = text
+        return self._title
+
+    def geometry(self, size=None):
+        if size:
+            self._geometry = size
+        return self._geometry
+
+    def config(self, *a, **kw): pass
     def pack(self, *a, **kw): pass
     def grid(self, *a, **kw): pass
     def place(self, *a, **kw): pass
     def destroy(self): pass
     def add(self, *a, **kw): pass
-    def config(self, *a, **kw): pass
     def get(self, *a, **kw): return "dummy"
     def winfo_children(self): return []
 
