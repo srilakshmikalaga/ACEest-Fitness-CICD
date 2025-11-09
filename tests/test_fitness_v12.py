@@ -102,10 +102,10 @@ def test_view_workouts(monkeypatch, app_instance):
         {"workout": "Squats", "duration": 15},
     ]
     with mock.patch("tkinter.messagebox.showinfo") as info:
-        app_instance.view_workoutsif hasattr(app_instance, "view_workouts"):
-    app_instance.view_workouts()
-else:
-    app_instance.view_summary()
+        if hasattr(app_instance, "view_workouts"):
+            app_instance.view_workouts()
+        else:
+            app_instance.view_summary()
 ()
         info.assert_called_once()
 
@@ -114,10 +114,10 @@ def test_view_workouts_no_entries(app_instance):
     """Test viewing workouts when none exist."""
     app_instance.workouts = []
     with mock.patch("tkinter.messagebox.showinfo") as info:
-        if hasattr(app_instance, "view_workouts"):
-    app_instance.view_workouts()
-else:
-    app_instance.view_summary()
+       if hasattr(app_instance, "view_workouts"):
+            app_instance.view_workouts()
+        else:
+            app_instance.view_summary()
 
         info.assert_called_once_with("Workouts", "No workouts added yet.")
 
