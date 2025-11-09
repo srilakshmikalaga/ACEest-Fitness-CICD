@@ -271,4 +271,4 @@ It automatically scans every commit for:
 
 ## Author
 
-**Name:** Srilakshmi 
+K N S Srilakshmi 

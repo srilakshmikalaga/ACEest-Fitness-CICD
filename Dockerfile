@@ -1,18 +1,18 @@
-# Use a lightweight Python base image
+# Base image
 FROM python:3.10-slim
 
-# Set working directory
+# Working directory
 WORKDIR /app
 
-# Copy dependencies and install
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Build argument: specify which file to include
+ARG VERSION_FILE=app/ACEest_Fitness.py
 
-# Copy your Flask application
-COPY app/ app/
+# Copy the chosen version file
+COPY ${VERSION_FILE} /app/ACEest_Fitness.py
 
-# Expose Flask port
-EXPOSE 5000
+# Install dependencies if needed
+COPY requirements.txt /app/
+RUN pip install -r requirements.txt
 
-# Run Flask app (using web_app.py)
-CMD ["python", "app/web_app.py"]
+# Run the app
+CMD ["python", "ACEest_Fitness.py"]

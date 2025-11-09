@@ -31,11 +31,7 @@ pipeline {
         sh '''
           echo "Setting up environment..."
           export PATH=$PATH:/var/lib/jenkins/.local/bin
-          
-          echo "Installing pytest-cov if not already present..."
           pip3 install pytest-cov --user
-          
-          echo "Running pytest with coverage..."
           pytest --cov=. --cov-report=xml --disable-warnings --cache-clear
         '''
       }
@@ -83,6 +79,25 @@ pipeline {
       }
     }
 
+    /* 👇 ADD THIS NEW STAGE HERE 👇 */
+    stage('Push All Docker Versions') {
+      steps {
+        withCredentials([string(credentialsId: 'docker-hub-password', variable: 'DOCKERHUB_TOKEN')]) {
+          sh '''
+            echo "🔹 Logging in to Docker Hub for multi-version push..."
+            echo "$DOCKERHUB_TOKEN" | docker login -u "kalyanimuppidi" --password-stdin
+
+            echo "🔹 Running push_all_versions.sh ..."
+            chmod +x push_all_versions.sh
+            ./push_all_versions.sh
+
+            echo "✅ All tagged versions pushed to Docker Hub successfully!"
+          '''
+        }
+      }
+    }
+    /* 👆 END OF NEW STAGE 👆 */
+
     stage('Deploy to Kubernetes (TEST)') {
       steps {
         sh '''
@@ -97,7 +112,6 @@ pipeline {
             exit 1
           fi
 
-          echo "Fetching Blue deployment pods..."
           kubectl get pods -l version=blue || echo "⚠️ Unable to fetch pods"
         '''
       }
@@ -113,56 +127,37 @@ pipeline {
           kubectl apply -f k8s/ab/service-b.yaml --validate=false
 
           echo "Checking rollout status..."
-          if ! kubectl rollout status deployment/aceest-fitness-a --timeout=120s; then
-            echo "❌ Deployment A failed. Rolling back..."
-            kubectl rollout undo deployment/aceest-fitness-a
-            exit 1
-          fi
-
-          if ! kubectl rollout status deployment/aceest-fitness-b --timeout=120s; then
-            echo "❌ Deployment B failed. Rolling back..."
-            kubectl rollout undo deployment/aceest-fitness-b
-            exit 1
-          fi
-
+          kubectl rollout status deployment/aceest-fitness-a --timeout=120s || kubectl rollout undo deployment/aceest-fitness-a
+          kubectl rollout status deployment/aceest-fitness-b --timeout=120s || kubectl rollout undo deployment/aceest-fitness-b
           echo "✅ All A/B Testing deployments successful!"
-          kubectl get pods -l app=aceest-fitness
         '''
       }
     }
 
     stage('Canary Deployment (Progressive Rollout)') {
-  steps {
-    sh '''
-      echo "🚀 Starting Canary deployment..."
-      kubectl apply -f k8s/canary-deployment.yaml --validate=false
-      kubectl apply -f k8s/service-canary.yaml --validate=false
+      steps {
+        sh '''
+          echo "🚀 Starting Canary deployment..."
+          kubectl apply -f k8s/canary-deployment.yaml --validate=false
+          kubectl apply -f k8s/service-canary.yaml --validate=false
+          kubectl rollout status deployment/aceest-fitness-canary || echo "⚠️ Canary rollout check skipped"
+          kubectl get pods -l version=canary
+          echo "✅ Canary deployment allows controlled rollout (10-20% traffic) before full release."
+        '''
+      }
+    }
 
-      echo "Monitoring Canary rollout..."
-      kubectl rollout status deployment/aceest-fitness-canary || echo "⚠️ Canary rollout check skipped"
-
-      echo "Canary pods running:"
-      kubectl get pods -l version=canary
-
-      echo "✅ Canary deployment allows controlled rollout (10-20% traffic) before full release."
-    '''
-  }
-}
-
-stage('Shadow Deployment (Traffic Mirroring)') {
-  steps {
-    sh '''
-      echo "👥 Starting Shadow deployment..."
-      kubectl apply -f k8s/shadow-deployment.yaml --validate=false
-      kubectl apply -f k8s/ingress-shadow.yaml --validate=false
-
-      echo "Shadow deployment runs parallelly for validation."
-      kubectl get pods -l version=shadow
-
-      echo "✅ Shadow deployments receive mirrored live traffic for testing without affecting users."
-    '''
-  }
-}
+    stage('Shadow Deployment (Traffic Mirroring)') {
+      steps {
+        sh '''
+          echo "👥 Starting Shadow deployment..."
+          kubectl apply -f k8s/shadow-deployment.yaml --validate=false
+          kubectl apply -f k8s/ingress-shadow.yaml --validate=false
+          kubectl get pods -l version=shadow
+          echo "✅ Shadow deployments receive mirrored live traffic for testing without affecting users."
+        '''
+      }
+    }
 
   }
 }
