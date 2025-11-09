@@ -1,25 +1,23 @@
+import os
 import pytest
 import tkinter as tk
 from unittest import mock
 from app import web_app
 from app.ACEest_Fitness import FitnessTrackerApp
-import os
-os.environ["DISPLAY"] = ":0"
-
 
 # --------------------------------------------------------------------
-# ✅ TESTS FOR THE FLASK APP (web_app.py)
+# ✅ Flask App Tests (web_app.py)
 # --------------------------------------------------------------------
 @pytest.fixture
 def client():
-    """Fixture to create a Flask test client."""
-    web_app.fitness_app.config['TESTING'] = True
+    """Create Flask test client."""
+    web_app.fitness_app.config["TESTING"] = True
     client = web_app.fitness_app.test_client()
     yield client
 
 
 def test_home_route(client):
-    """Test root endpoint returns welcome message."""
+    """Check root endpoint returns welcome message."""
     response = client.get("/")
     assert response.status_code == 200
     data = response.get_json()
@@ -27,7 +25,7 @@ def test_home_route(client):
 
 
 def test_add_and_view_workouts(client):
-    """Test adding a workout and viewing it back."""
+    """Add a workout and retrieve it."""
     add_response = client.post("/add", json={"exercise": "Push-ups", "duration": 15})
     assert add_response.status_code == 201
     assert add_response.get_json()["message"] == "Workout added successfully"
@@ -40,38 +38,39 @@ def test_add_and_view_workouts(client):
 
 
 def test_add_workout_with_invalid_json(client):
-    """Ensure app handles invalid JSON gracefully."""
-    response = client.post("/add", data="bad data")
+    """Handle bad JSON gracefully."""
+    response = client.post("/add", data="invalid data")
     assert response.status_code in (400, 415, 500)
 
 
 def test_add_workout_with_get_method(client):
-    """Ensure GET to /add route is not allowed."""
+    """Ensure GET to /add is not allowed."""
     response = client.get("/add")
-    assert response.status_code in (405, 404)  # Method Not Allowed or Not Found
+    assert response.status_code in (405, 404)
 
 
 # --------------------------------------------------------------------
-# ✅ TESTS FOR THE TKINTER DESKTOP APP (ACEest_Fitness.py)
+# ✅ Tkinter App Tests (ACEest_Fitness.py)
 # --------------------------------------------------------------------
 @pytest.fixture
 def mock_tkinter_app(monkeypatch):
-    """Create a real hidden Tkinter app for testing without visible GUI."""
-    root = tk.Tk()
-    root.withdraw()  # Hide window for headless CI/CD
+    """Mock Tkinter root to run in headless Jenkins without GUI."""
 
-    app = FitnessTrackerApp(root)
+    class MockTk:
+        def withdraw(self): pass
+        def destroy(self): pass
+
+    # Prevent real GUI creation in Jenkins
+    monkeypatch.setattr(tk, "Tk", lambda: MockTk())
+
+    app = FitnessTrackerApp(MockTk())
     app.workout_entry = mock.Mock()
     app.duration_entry = mock.Mock()
-
     yield app
-
-    # Cleanup after each test
-    root.destroy()
 
 
 def test_add_workout_valid(monkeypatch, mock_tkinter_app):
-    """Add a workout with valid inputs."""
+    """Add workout with valid data."""
     app = mock_tkinter_app
     app.workout_entry.get.return_value = "Running"
     app.duration_entry.get.return_value = "30"
@@ -85,11 +84,10 @@ def test_add_workout_valid(monkeypatch, mock_tkinter_app):
 
 
 def test_add_workout_invalid_duration(monkeypatch, mock_tkinter_app):
-    """Add workout with invalid duration should show error."""
+    """Add workout with invalid duration input."""
     app = mock_tkinter_app
     app.workout_entry.get.return_value = "Cycling"
     app.duration_entry.get.return_value = "abc"
-
     called = {}
 
     def fake_error(title, msg):
@@ -101,11 +99,10 @@ def test_add_workout_invalid_duration(monkeypatch, mock_tkinter_app):
 
 
 def test_add_workout_missing_inputs(monkeypatch, mock_tkinter_app):
-    """Add workout without filling fields."""
+    """Add workout without required inputs."""
     app = mock_tkinter_app
     app.workout_entry.get.return_value = ""
     app.duration_entry.get.return_value = ""
-
     called = {}
 
     def fake_error(title, msg):
@@ -117,7 +114,7 @@ def test_add_workout_missing_inputs(monkeypatch, mock_tkinter_app):
 
 
 def test_view_workouts_no_entries(monkeypatch, mock_tkinter_app):
-    """View workouts when none are present."""
+    """View workouts when none exist."""
     app = mock_tkinter_app
     app.workouts = []
     called = {}
@@ -131,7 +128,7 @@ def test_view_workouts_no_entries(monkeypatch, mock_tkinter_app):
 
 
 def test_view_workouts_with_entries(monkeypatch, mock_tkinter_app):
-    """View workouts with sample data."""
+    """View workouts with example data."""
     app = mock_tkinter_app
     app.workouts = [{"workout": "Yoga", "duration": 45}]
     called = {}
