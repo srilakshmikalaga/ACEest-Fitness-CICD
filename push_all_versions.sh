@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO="kalyanimuppidi/ace-fitness-and-gym"
+REPO="srilakshmikalaga/aceest-fitness-app"
 
 # simple two-column list: tag filename
 # each line: tag|path
