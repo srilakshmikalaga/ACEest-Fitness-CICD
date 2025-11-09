@@ -44,6 +44,7 @@ ACEest-Fitness-CICD/
 │   ├── ACEest_Fitness-V1.2.1.py        # Version 1.2.1
 │   ├── ACEest_Fitness-V1.2.2.py        # Version 1.2.2
 │   ├── ACEest_Fitness-V1.2.3.py        # Version 1.2.3
+|   |── ACEest_Fitness-V1.2.py          # Version 1.2
 │   ├── ACEest_Fitness-V1.3.py          # Version 1.3 (latest)
 │   ├── web_app.py                      # Web routes and Flask logic
 │
@@ -56,6 +57,7 @@ ACEest-Fitness-CICD/
 │   ├── test_fitness_v123.py
 │   ├── test_fitness_v13.py
 │   ├── test_webapp.py
+|   |── test_yaml_configs.py
 │   
 │
 ├── k8s/                                # Kubernetes configuration
@@ -74,18 +76,15 @@ ACEest-Fitness-CICD/
 │   ├── service.yaml                    # Base service definition
 │   └── deployment.yaml                 # Base deployment definition
 │
-├
 ├── coverage.xml                        # Pytest coverage report
 ├── Dockerfile                          # Docker build definition
 ├── Jenkinsfile                         # Jenkins pipeline definition
 ├── push_all_versions.sh                # Script to push multiple versions
-├── pytest.ini                          # Pytest configuration file
 ├── README.md                           # Documentation
 ├── requirements.txt                    # Python dependencies
 ├── sonar_issues.json                   # SonarCloud issue report
 ├── sonar_report.json                   # SonarCloud summary report
 ├── sonarcommands.txt                   # Sonar command references
-└── versions/                           # Backup of all versioned scripts
 
 ```
 
@@ -252,12 +251,12 @@ It automatically scans every commit for:
 ## SonarCloud Quality Overview (Latest Analysis)
 
 From the latest analysis on **SonarCloud (09 Nov 2025)**:  
-- **Reliability:** A (10 minor issues)  
-- **Maintainability:** A (86 issues resolved)  
-- **Security:** A (0 vulnerabilities)  
+- **Reliability:** A  
+- **Maintainability:** A  
+- **Security:** A  
 - **Hotspots Reviewed:** 100%  
 - **Coverage:** 83.1%  
-- **Duplications:** 12.8%  
+- **Duplications:** 12.5%  
 - **Quality Gate:** ✅ Passed  
 
 This indicates a **high-quality, maintainable, and secure** codebase integrated into the CI/CD workflow.
