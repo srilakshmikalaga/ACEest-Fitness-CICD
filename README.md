@@ -37,47 +37,55 @@ The solution demonstrates **progressive deployment strategies** such as **Blue-G
 ```
 ACEest-Fitness-CICD/
 │
-├── ACEest_Fitness-V1.3.py             # Latest version of the Flask app
-├── coverage.xml                       # Test coverage report (Pytest)
-├── Dockerfile                         # Docker build definition
-├── Jenkinsfile                        # Jenkins CI/CD pipeline definition
-├── pytest.ini                         # Pytest configuration
-├── README.md                          # Project documentation
-├── requirements.txt                   # Python dependencies
-├── sonar_issues.json                  # SonarCloud issues report
-├── sonar_report.json                  # SonarCloud summary report
-├── sonarcommands.txt                  # Sonar scanner CLI commands
-│
-├── app/                               # Application source package
+├── app/                                # Application source code
 │   ├── __init__.py
-│   ├── ACEest_Fitness.py              # Flask main application
-│   ├── web_app.py                     # Web layer / routes
-│   └── __pycache__/                   # Python bytecode cache
+│   ├── ACEest_Fitness.py               # Main Flask application
+│   ├── ACEest_Fitness-V1.1.py          # Version 1.1
+│   ├── ACEest_Fitness-V1.2.1.py        # Version 1.2.1
+│   ├── ACEest_Fitness-V1.2.2.py        # Version 1.2.2
+│   ├── ACEest_Fitness-V1.2.3.py        # Version 1.2.3
+│   ├── ACEest_Fitness-V1.3.py          # Version 1.3 (latest)
+│   ├── web_app.py                      # Web routes and Flask logic
 │
-├── k8s/                               # Kubernetes manifests
+├── tests/                              # Test automation using Pytest
+│   ├── test_fitness_app.py
+│   ├── test_fitness_v11.py
+│   ├── test_fitness_v12.py
+│   ├── test_fitness_v121.py
+│   ├── test_fitness_v122.py
+│   ├── test_fitness_v123.py
+│   ├── test_fitness_v13.py
+│   ├── test_webapp.py
+│   
+│
+├── k8s/                                # Kubernetes configuration
 │   ├── ab/
-│   │   ├── deployment-a.yaml          # A version deployment for A/B testing
-│   │   ├── deployment-b.yaml          # B version deployment
-│   │   ├── service-a.yaml             # Service for version A
-│   │   └── service-b.yaml             # Service for version B
-│   ├── blue-deployment.yaml           # Blue deployment
-│   ├── canary-deployment.yaml         # Canary rollout deployment
-│   ├── deployment.yaml                # Default base deployment
-│   ├── green-deployment.yaml          # Green environment deployment
-│   ├── ingress-shadow.yaml            # Ingress rules for shadow testing
-│   ├── service.yaml                   # Main Kubernetes service
-│   ├── service-canary.yaml            # Canary service routing
-│   ├── shadow-deployment.yaml         # Shadow deployment
-│   ├── shadow-service.yaml            # Shadow service
+│   │   ├── deployment-a.yaml           # A version deployment (A/B testing)
+│   │   ├── deployment-b.yaml           # B version deployment
+│   │   ├── service-a.yaml              # Service A
+│   │   └── service-b.yaml              # Service B
+│   ├── blue-deployment.yaml            # Blue environment
+│   ├── green-deployment.yaml           # Green environment
+│   ├── canary-deployment.yaml          # Canary rollout
+│   ├── service-canary.yaml             # Canary routing
+│   ├── shadow-deployment.yaml          # Shadow release
+│   ├── shadow-service.yaml             # Shadow service
+│   ├── ingress-shadow.yaml             # Shadow ingress configuration
+│   ├── service.yaml                    # Base service definition
+│   └── deployment.yaml                 # Base deployment definition
 │
-├── tests/                             # Unit tests
-│   ├── test_webapp.py                 # Test cases for Flask routes
-│   └── __pycache__/                   # Compiled test cache
-│
-└── versions/                          # Older app versions
-    ├── ACEest_Fitness-V1.1.py
-    ├── ACEest_Fitness-V1.2.py
-    └── ACEest_Fitness-V1.2.3.py
+├
+├── coverage.xml                        # Pytest coverage report
+├── Dockerfile                          # Docker build definition
+├── Jenkinsfile                         # Jenkins pipeline definition
+├── push_all_versions.sh                # Script to push multiple versions
+├── pytest.ini                          # Pytest configuration file
+├── README.md                           # Documentation
+├── requirements.txt                    # Python dependencies
+├── sonar_issues.json                   # SonarCloud issue report
+├── sonar_report.json                   # SonarCloud summary report
+├── sonarcommands.txt                   # Sonar command references
+└── versions/                           # Backup of all versioned scripts
 
 ```
 
@@ -238,6 +246,21 @@ It automatically scans every commit for:
 
 **Project Dashboard:**  
 [View SonarCloud Analysis](https://sonarcloud.io/summary/overall?id=ACEest-Fitness-CICD&branch=master)
+
+---
+
+## SonarCloud Quality Overview (Latest Analysis)
+
+From the latest analysis on **SonarCloud (09 Nov 2025)**:  
+- **Reliability:** A (10 minor issues)  
+- **Maintainability:** A (86 issues resolved)  
+- **Security:** A (0 vulnerabilities)  
+- **Hotspots Reviewed:** 100%  
+- **Coverage:** 83.1%  
+- **Duplications:** 12.8%  
+- **Quality Gate:** ✅ Passed  
+
+This indicates a **high-quality, maintainable, and secure** codebase integrated into the CI/CD workflow.
 
 ---
 
