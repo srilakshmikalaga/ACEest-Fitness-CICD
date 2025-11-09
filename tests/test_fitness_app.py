@@ -3,6 +3,9 @@ import tkinter as tk
 from unittest import mock
 from app import web_app
 from app.ACEest_Fitness import FitnessTrackerApp
+import os
+os.environ["DISPLAY"] = ":0"
+
 
 # --------------------------------------------------------------------
 # ✅ TESTS FOR THE FLASK APP (web_app.py)
