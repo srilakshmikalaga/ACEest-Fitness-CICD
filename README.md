@@ -175,7 +175,7 @@ Rollback:
 kubectl patch service aceest-fitness-service -p '{"spec":{"selector":{"version":"blue"}}}'
 ```
 
-###2. Canary Deployment
+### 2. Canary Deployment
 Release gradually to subset of users:
 ```bash
 kubectl apply -f k8s/canary-deployment.yaml
