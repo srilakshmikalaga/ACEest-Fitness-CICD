@@ -54,22 +54,37 @@ def test_add_workout_with_get_method(client):
 # --------------------------------------------------------------------
 @pytest.fixture
 def mock_tkinter_app(monkeypatch):
-    """Mock Tkinter root to run in headless Jenkins without GUI."""
+    """Fully mock Tkinter for Jenkins headless environment."""
 
+    # ---- Fake minimal Tkinter window ----
     class MockTk:
+        def __init__(self):
+            self.tk = True  # Tkinter widgets expect this
         def withdraw(self): pass
         def destroy(self): pass
-        def title(self, *args, **kwargs): pass  # Added for FitnessTrackerApp
+        def title(self, *args, **kwargs): pass
         def mainloop(self): pass
 
-    # Prevent real GUI creation in Jenkins
-    monkeypatch.setattr(tk, "Tk", lambda: MockTk())
+    # ---- Fake basic Tkinter widgets ----
+    class MockWidget:
+        def __init__(self, *args, **kwargs): pass
+        def grid(self, *args, **kwargs): pass
+        def pack(self, *args, **kwargs): pass
+        def get(self): return ""
+        def insert(self, *args, **kwargs): pass
+        def delete(self, *args, **kwargs): pass
 
+    # Monkeypatch all Tkinter GUI components to mock classes
+    monkeypatch.setattr(tk, "Tk", MockTk)
+    monkeypatch.setattr(tk, "Label", MockWidget)
+    monkeypatch.setattr(tk, "Entry", MockWidget)
+    monkeypatch.setattr(tk, "Button", MockWidget)
+
+    # Now create your mock app
     app = FitnessTrackerApp(MockTk())
     app.workout_entry = mock.Mock()
     app.duration_entry = mock.Mock()
     yield app
-
 
 
 def test_add_workout_valid(monkeypatch, mock_tkinter_app):
