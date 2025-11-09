@@ -59,6 +59,8 @@ def mock_tkinter_app(monkeypatch):
     class MockTk:
         def withdraw(self): pass
         def destroy(self): pass
+        def title(self, *args, **kwargs): pass  # Added for FitnessTrackerApp
+        def mainloop(self): pass
 
     # Prevent real GUI creation in Jenkins
     monkeypatch.setattr(tk, "Tk", lambda: MockTk())
@@ -67,6 +69,7 @@ def mock_tkinter_app(monkeypatch):
     app.workout_entry = mock.Mock()
     app.duration_entry = mock.Mock()
     yield app
+
 
 
 def test_add_workout_valid(monkeypatch, mock_tkinter_app):
