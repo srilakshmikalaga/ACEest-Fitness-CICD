@@ -85,7 +85,7 @@ pipeline {
         withCredentials([string(credentialsId: 'docker-hub-password', variable: 'DOCKERHUB_TOKEN')]) {
           sh '''
             echo "🔹 Logging in to Docker Hub for multi-version push..."
-            echo "$DOCKERHUB_TOKEN" | docker login -u "kalyanimuppidi" --password-stdin
+            echo "$DOCKERHUB_TOKEN" | docker login -u "srilakshmikalaga" --password-stdin
 
             echo "🔹 Running push_all_versions.sh ..."
             chmod +x push_all_versions.sh
