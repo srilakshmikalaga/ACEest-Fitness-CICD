@@ -52,6 +52,8 @@ class DummyWidget:
     def add(self, *a, **kw): pass
     def get(self, *a, **kw): return "dummy"
     def winfo_children(self): return []
+    def bind(self, *a, **kw): pass
+
 
 
 @pytest.fixture(scope="session")
