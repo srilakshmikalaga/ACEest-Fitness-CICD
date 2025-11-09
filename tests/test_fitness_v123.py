@@ -22,11 +22,10 @@ def load_v123_module():
     spec.loader.exec_module(module)
     return module
 
-
 class DummyWidget:
     """Mock Tkinter widget for headless Jenkins CI testing."""
     def __init__(self, *a, **kw):
-        self.tk = self          # mimic tkinter's structure
+        self.tk = self          # mimic tkinter's internal tk object
         self._w = "mock"
         self.children = {}
         self.master = None
@@ -34,6 +33,7 @@ class DummyWidget:
         self._title = ""
         self._geometry = ""
 
+    # --- Basic Window Methods ---
     def title(self, text=None):
         if text:
             self._title = text
@@ -44,6 +44,7 @@ class DummyWidget:
             self._geometry = size
         return self._geometry
 
+    # --- Common Widget Stubs ---
     def config(self, *a, **kw): pass
     def pack(self, *a, **kw): pass
     def grid(self, *a, **kw): pass
@@ -54,10 +55,15 @@ class DummyWidget:
     def get(self, *a, **kw): return "dummy"
     def winfo_children(self): return []
 
-    # ✅ critical addition: tkinter internals use this
+    # --- Tkinter Internal Stubs ---
     def call(self, *a, **kw): 
-        """Stub for Tcl interpreter calls."""
+        """Used internally by Tkinter (mocked)."""
         return None
+
+    def createcommand(self, *a, **kw):
+        """Stub for command registration in ttk widgets."""
+        return None
+
 
 
 
