@@ -24,9 +24,9 @@ def load_v123_module():
 
 
 class DummyWidget:
-    """Simplified mock for Tkinter widgets with basic window-like behavior."""
+    """Mock Tkinter widget for headless Jenkins CI testing."""
     def __init__(self, *a, **kw):
-        self.tk = self
+        self.tk = self          # mimic tkinter's structure
         self._w = "mock"
         self.children = {}
         self.master = None
@@ -50,9 +50,14 @@ class DummyWidget:
     def place(self, *a, **kw): pass
     def destroy(self): pass
     def add(self, *a, **kw): pass
+    def bind(self, *a, **kw): pass
     def get(self, *a, **kw): return "dummy"
     def winfo_children(self): return []
-    def bind(self, *a, **kw): pass
+
+    # ✅ critical addition: tkinter internals use this
+    def call(self, *a, **kw): 
+        """Stub for Tcl interpreter calls."""
+        return None
 
 
 
