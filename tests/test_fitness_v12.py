@@ -9,7 +9,7 @@ import pytest
 
 # ---- Load ACEest_Fitness-V1.2 dynamically ----
 def load_v12_module():
-    """Import ACEest_Fitness-V1.2.py without renaming."""
+    """Import ACEest_Fitness-V1.2.py dynamically for testing."""
     path = os.path.join(os.path.dirname(__file__), "../app/ACEest_Fitness-V1.2.py")
     spec = importlib.util.spec_from_file_location("ACEest_Fitness_V1_2", path)
     module = importlib.util.module_from_spec(spec)
@@ -18,15 +18,15 @@ def load_v12_module():
     return module
 
 
-# ---- Headless DummyWidget ----
+# ---- Safe DummyWidget ----
 class DummyWidget:
-    """Mocks all Tkinter behavior to safely run in headless mode."""
+    """Mocks all Tkinter & ttk behavior safely for headless CI."""
     def __init__(self, *a, **kw):
         self.tk = self
         self._w = "mock_widget"
         self.children = {}
         self.configured = {}
-        self._last_child_ids = {}  # Needed by Tk internals
+        self._last_child_ids = {}
         self.master = None
 
     def pack(self, *a, **kw): pass
@@ -43,8 +43,7 @@ class DummyWidget:
     def title(self, *a, **kw): pass
     def geometry(self, *a, **kw): pass
     def resizable(self, *a, **kw): pass
-
-    def call(self, *a, **kw): return None
+    def call(self, *a, **kw): return None  # prevents 'Notebook' call error
     def _options(self, *a, **kw): return tuple()
     def nametowidget(self, name): return self
 
@@ -56,22 +55,31 @@ def fitness_app_module():
 
 @pytest.fixture
 def app_instance(monkeypatch, fitness_app_module):
-    """Create FitnessTrackerApp with Tkinter fully mocked for CI testing."""
-    widgets = [tk.Label, tk.Entry, tk.Button, ttk.Notebook, ttk.Frame]
-    # Mock widget layout methods, skip tk.Tk entirely
-    for w in widgets:
-        monkeypatch.setattr(w, "__init__", DummyWidget.__init__)
-        for method in ["pack", "grid", "place", "destroy", "config"]:
-            monkeypatch.setattr(w, method, getattr(DummyWidget, method))
+    """Create FitnessTrackerApp with all Tkinter widgets safely mocked."""
+    dummy = DummyWidget()
 
-    # Replace tk.Tk and tk.StringVar with simple mocks
-    monkeypatch.setattr(tk, "Tk", lambda: DummyWidget())
-    monkeypatch.setattr(tk, "StringVar", lambda *a, **kw: mock.Mock(get=lambda: "Workout"))
+    # --- Full mock patching ---
+    def mock_all_widgets():
+        # Mock Tkinter core and ttk widgets to DummyWidget
+        for mod in [tk, ttk]:
+            for cls_name in dir(mod):
+                cls = getattr(mod, cls_name)
+                if isinstance(cls, type) and issubclass(cls, (tk.Widget, object)):
+                    monkeypatch.setattr(mod, cls_name, DummyWidget)
 
-    return fitness_app_module.FitnessTrackerApp(DummyWidget())
+        # Replace special Tk constructs
+        monkeypatch.setattr(tk, "Tk", lambda: dummy)
+        monkeypatch.setattr(tk, "Frame", DummyWidget)
+        monkeypatch.setattr(ttk, "Notebook", DummyWidget)
+        monkeypatch.setattr(ttk, "Frame", DummyWidget)
+        monkeypatch.setattr(tk, "StringVar", lambda *a, **kw: mock.Mock(get=lambda: "Workout"))
+
+    mock_all_widgets()
+
+    return fitness_app_module.FitnessTrackerApp(dummy)
 
 
-# ---- Passing logic tests ----
+# ---- Logic Tests ----
 
 def test_add_workout_valid(app_instance):
     """Test valid workout addition."""
@@ -106,15 +114,15 @@ def test_view_workouts_no_entries(app_instance):
         info.assert_called_once_with("Workouts", "No workouts added yet.")
 
 
-# ---- Skip GUI-heavy tests ----
+# ---- Skip GUI Tests ----
 
-@pytest.mark.skip(reason="Tkinter GUI root not needed in headless CI mode")
+@pytest.mark.skip(reason="Tkinter GUI root not required in headless CI")
 def test_gui_initialization_does_not_crash(fitness_app_module):
     instance = fitness_app_module.FitnessTrackerApp(DummyWidget())
     assert hasattr(instance, "workouts")
 
 
-@pytest.mark.skip(reason="GUI workflow skipped for CI/CD headless run")
+@pytest.mark.skip(reason="GUI workflow skipped in CI/CD pipeline")
 def test_add_and_view_workflow(monkeypatch, fitness_app_module):
     instance = fitness_app_module.FitnessTrackerApp(DummyWidget())
     instance.workouts = [{"workout": "Bench Press", "duration": 20}]
