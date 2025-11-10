@@ -38,23 +38,27 @@ pipeline {
     }
 
     stage('SonarQube Analysis') {
-      environment {
+    environment {
         SCANNER_HOME = tool 'SonarScanner'
-      }
-      steps {
-        withSonarQubeEnv('sonar-cloud') {
-          sh '''
-            $SCANNER_HOME/bin/sonar-scanner \
-            -Dsonar.projectKey=ACEest-Fitness-CICD \
-            -Dsonar.organization=srilakshmikalaga \
-            -Dsonar.sources=. \
-            -Dsonar.python.coverage.reportPaths=coverage.xml \
-            -Dsonar.python.version=3.8 \
-            -Dsonar.host.url=https://sonarcloud.io
-          '''
-        }
-      }
     }
+    steps {
+        withSonarQubeEnv('sonar-cloud') {
+            sh '''
+                $SCANNER_HOME/bin/sonar-scanner \
+                -Dsonar.projectKey=ACEest-Fitness-CICD \
+                -Dsonar.organization=srilakshmikalaga \
+                -Dsonar.sources=. \
+                -Dsonar.python.coverage.reportPaths=coverage.xml \
+                -Dsonar.python.version=3.8 \
+                -Dsonar.host.url=https://sonarcloud.io \
+                -Dsonar.branch.name=main \
+                -Dsonar.qualitygate.wait=true
+            '''
+            '''
+        }
+    }
+}
+
 
     stage('Build Docker Image') {
       steps {
